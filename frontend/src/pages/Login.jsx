@@ -1,63 +1,68 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import API from '../api/axios';
-import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import API from '../api';
 
-export default function Login() {
-  const [form, setForm]   = useState({ email: '', password: '' });
+function Login() {
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = async e => {
-    e.preventDefault();
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.email || !form.password)
+      return setError('All fields are required');
+
     setLoading(true);
     try {
-      const { data } = await API.post('/login', form);
-      login(data.token, data.student);
+      const res = await axios.post(`${API}/login`, form);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'Login failed. Check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-header">
-          <div className="auth-icon">🎓</div>
-          <h1>Student Portal</h1>
-          <p>Sign in to your account</p>
+    <div className="auth-container">
+      <div className="auth-box">
+        <div className="auth-logo">
+          <span className="icon">🎓</span>
+          <h1>GrievancePortal</h1>
+          <p>Student Grievance Management System</p>
         </div>
-
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="field">
-            <label>Email</label>
-            <input name="email" type="email" placeholder="john@college.edu"
-              value={form.email} onChange={handleChange} required />
+        <h2>Student Login</h2>
+        {error && <div className="error-msg">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>College Email</label>
+            <input type="email" name="email" placeholder="student@college.edu"
+              value={form.email} onChange={handleChange} />
           </div>
-          <div className="field">
+          <div className="form-group">
             <label>Password</label>
-            <input name="password" type="password" placeholder="Your password"
-              value={form.password} onChange={handleChange} required />
+            <input type="password" name="password" placeholder="Enter your password"
+              value={form.password} onChange={handleChange} />
           </div>
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Login'}
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Signing In...' : '🔐 Sign In'}
           </button>
         </form>
-
-        <p className="auth-switch">
-          Don't have an account? <Link to="/register">Register</Link>
-        </p>
+        <div className="auth-link">
+          New student? <Link to="/register">Register here</Link>
+        </div>
       </div>
     </div>
   );
 }
+
+export default Login;

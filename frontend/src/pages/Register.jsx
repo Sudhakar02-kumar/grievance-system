@@ -1,22 +1,32 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import API from '../api/axios';
+import axios from 'axios';
+import API from '../api';
 
-export default function Register() {
-  const [form, setForm]   = useState({ name: '', email: '', password: '' });
+function Register() {
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = async e => {
-    e.preventDefault();
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.password)
+      return setError('All fields are required');
+    if (form.password.length < 6)
+      return setError('Password must be at least 6 characters');
+
     setLoading(true);
     try {
-      await API.post('/register', form);
-      navigate('/login');
+      await axios.post(`${API}/register`, form);
+      setSuccess('Account created! Redirecting to login...');
+      setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -25,41 +35,42 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-header">
-          <div className="auth-icon">🎓</div>
-          <h1>Student Portal</h1>
-          <p>Create your account</p>
+    <div className="auth-container">
+      <div className="auth-box">
+        <div className="auth-logo">
+          <span className="icon">🎓</span>
+          <h1>GrievancePortal</h1>
+          <p>Student Grievance Management System</p>
         </div>
-
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="field">
+        <h2>Create Student Account</h2>
+        {error && <div className="error-msg">{error}</div>}
+        {success && <div className="success-msg">{success}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
             <label>Full Name</label>
-            <input name="name" placeholder="John Doe" value={form.name}
-              onChange={handleChange} required />
+            <input type="text" name="name" placeholder="e.g. Rahul Sharma"
+              value={form.name} onChange={handleChange} />
           </div>
-          <div className="field">
-            <label>Email</label>
-            <input name="email" type="email" placeholder="john@college.edu"
-              value={form.email} onChange={handleChange} required />
+          <div className="form-group">
+            <label>College Email</label>
+            <input type="email" name="email" placeholder="student@college.edu"
+              value={form.email} onChange={handleChange} />
           </div>
-          <div className="field">
+          <div className="form-group">
             <label>Password</label>
-            <input name="password" type="password" placeholder="Min 6 characters"
-              value={form.password} onChange={handleChange} required minLength={6} />
+            <input type="password" name="password" placeholder="Min. 6 characters"
+              value={form.password} onChange={handleChange} />
           </div>
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? 'Creating account…' : 'Register'}
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Creating Account...' : '🚀 Register'}
           </button>
         </form>
-
-        <p className="auth-switch">
-          Already have an account? <Link to="/login">Login</Link>
-        </p>
+        <div className="auth-link">
+          Already registered? <Link to="/login">Sign In</Link>
+        </div>
       </div>
     </div>
   );
 }
+
+export default Register;
